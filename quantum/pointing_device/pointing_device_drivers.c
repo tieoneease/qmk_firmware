@@ -156,6 +156,10 @@ report_mouse_t cirque_pinnacle_get_report(report_mouse_t mouse_report) {
     is_touch_down = touchData.touchDown;
 #        endif
 
+#        ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+    is_touch_down = touchData.touchDown;
+#        endif
+
     // Scale coordinates to arbitrary X, Y resolution
     cirque_pinnacle_scale_data(&touchData, cirque_pinnacle_get_scale(), cirque_pinnacle_get_scale());
 
