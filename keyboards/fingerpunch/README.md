@@ -28,22 +28,22 @@ For general firmware build walkthrough and instructions, please see:
 | Key                            | Category           | Description                                                                                                                                                                                   |
 | ------------------------------ | -------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FP_ACCEL_TOG`                 | Pointing Device    | Toggle pointing device acceleration (default is enabled on keyboard startup)                                                                                                                  |
-| `FP_POINT_DPI_UP`              | Pointing Device    | Increase the pointing DPI (increments of 1, maximum 30)                                                                                                                                       |
-| `FP_POINT_DPI_DN`              | Pointing Device    | Decrease the pointing DPI (increments of 1, maximum 30)                                                                                                                                       |
+| `FP_POINT_DPI_UP`              | Pointing Device    | Increase the pointing DPI (increments of 1, maximum `FP_POINTING_MAX_DPI`)                                                                                                                    |
+| `FP_POINT_DPI_DN`              | Pointing Device    | Decrease the pointing DPI (increments of 1, maximum `FP_POINTING_MAX_DPI`)                                                                                                                    |
 | `FP_POINT_DPI_RESET`           | Pointing Device    | Reset the pointing DPI back to the default (defined as value of `FP_POINTING_DEFAULT_DPI`)                                                                                                    |
 | `FP_SCROLL_TOG`                | Pointing Device    | Toggle scrolling mode                                                                                                                                                                         |
 | `FP_SCROLL_ON`                 | Pointing Device    | Turn on scrolling mode                                                                                                                                                                        |
 | `FP_SCROLL_OFF`                | Pointing Device    | Turn off scrolling mode                                                                                                                                                                       |
 | `FP_SCROLL_MOMENT`             | Pointing Device    | Activate scrolling mode while holding this key                                                                                                                                                |
-| `FP_SCROLL_DPI_UP`             | Pointing Device    | Increase the scrolling DPI (increments of 1, maximum 30)                                                                                                                                      |
-| `FP_SCROLL_DPI_DN`             | Pointing Device    | Decrease the scrolling DPI (increments of 1, maximum 30)                                                                                                                                      |
+| `FP_SCROLL_DPI_UP`             | Pointing Device    | Increase the scrolling DPI (increments of 1, maximum `FP_POINTING_SCROLLING_MAX_DPI`)                                                                                                         |
+| `FP_SCROLL_DPI_DN`             | Pointing Device    | Decrease the scrolling DPI (increments of 1, maximum `FP_POINTING_SCROLLING_MAX_DPI`)                                                                                                         |
 | `FP_SCROLL_DPI_RESET`          | Pointing Device    | Reset the scrolling DPI back to the default (defined as value of `FP_POINTING_SCROLLING_DPI`)                                                                                                 |
 | `FP_SNIPE_TOG`                 | Pointing Device    | Toggle sniping mode                                                                                                                                                                           |
 | `FP_SNIPE_ON`                  | Pointing Device    | Turn on sniping mode                                                                                                                                                                          |
 | `FP_SNIPE_OFF`                 | Pointing Device    | Turn off sniping mode                                                                                                                                                                         |
 | `FP_SNIPE_MOMENT`              | Pointing Device    | Activate sniping mode while holding this key                                                                                                                                                  |
-| `FP_SNIPE_DPI_UP`              | Pointing Device    | Increase the sniping DPI (increments of 1, maximum 30)                                                                                                                                        |
-| `FP_SNIPE_DPI_DN`              | Pointing Device    | Decrease the sniping DPI (increments of 1, maximum 30)                                                                                                                                        |
+| `FP_SNIPE_DPI_UP`              | Pointing Device    | Increase the sniping DPI (increments of 1, maximum `FP_POINTING_SNIPING_MAX_DPI`)                                                                                                             |
+| `FP_SNIPE_DPI_DN`              | Pointing Device    | Decrease the sniping DPI (increments of 1, maximum `FP_POINTING_SNIPING_MAX_DPI`)                                                                                                             |
 | `FP_SNIPE_DPI_RESET`           | Pointing Device    | Reset the sniping DPI back to the default (defined as value of `FP_POINTING_SNIPING_DPI`)                                                                                                     |
 | `FP_ZOOM_TOG`                  | Pointing Device    | Toggle zooming mode                                                                                                                                                                           |
 | `FP_ZOOM_ON`                   | Pointing Device    | Turn on zooming mode                                                                                                                                                                          |
@@ -78,7 +78,7 @@ Note: if you are using a userspace, and you have custom keycodes, you will need 
     || defined(KEYBOARD_fingerpunch_rockon_v3) \
     || defined(KEYBOARD_fingerpunch_rockon_bp) \
     || defined(KEYBOARD_fingerpunch_sweeeeep) \
-    || defined(KEYBOARD_fingerpunch_ximi) \
+    || defined(KEYBOARD_fingerpunch_ximi)
 #    define PLACEHOLDER_SAFE_RANGE FP_SAFE_RANGE
 #else
 #    define PLACEHOLDER_SAFE_RANGE SAFE_RANGE
@@ -91,6 +91,76 @@ enum userspace_custom_keycodes {
     NEW_SAFE_RANGE,
 }
 ```
+
+## Encoders
+
+The fingerpunch firmware has some pre-defined encoder behaviors, which you can specify on a per encoder and per layer basis. See the table below. If you wanted the first encoder (encoder 0) to behave as DPI pointing on layer 2, you'd set `#define FP_ENC_0_LAYER_DPI_POINTING 2` in your config.h
+
+If you don't want to use this functionality, you can override it by creating your own `encoder_update_user()` function and return false at the end. This will bypass the fingerpunch encoder logic.
+
+For example:
+```c
+bool encoder_update_kb(uint8_t index, bool clockwise) {
+    // Your encoder logic goes here
+    
+    // return false to avoid processing the encoder_update_kb() function that fingerpunch uses
+    return false;
+}
+```
+
+**Please note that there cannot be duplicate values per encoder config.** Below is an example of a configuration that will work. Note that you aren't limited to 0-6. If you have 8 or 9 layers, you can specify any layer, as long as none have the same layer value.
+
+```c
+#define FP_ENC_0_LAYER_VOLUME         6
+#define FP_ENC_0_LAYER_PGUP_PGDN      4
+#define FP_ENC_0_LAYER_ZOOM           3
+#define FP_ENC_0_LAYER_DPI_POINTING   0
+#define FP_ENC_0_LAYER_SUPER_TAB      1
+#define FP_ENC_0_LAYER_SUPER_CTRL_TAB 2
+#define FP_ENC_0_LAYER_SCROLL_WHEEL   5
+#define FP_ENC_0_LAYER_RGB_MODE       7
+#define FP_ENC_0_LAYER_RGB_HUE        8
+#define FP_ENC_0_LAYER_RGB_SAT        9
+#define FP_ENC_0_LAYER_RGB_VAL        10
+
+#define FP_ENC_1_LAYER_SUPER_TAB      4
+#define FP_ENC_1_LAYER_PGUP_PGDN      6
+#define FP_ENC_1_LAYER_ZOOM           3
+#define FP_ENC_1_LAYER_DPI_POINTING   1
+#define FP_ENC_1_LAYER_SUPER_CTRL_TAB 5
+#define FP_ENC_1_LAYER_SCROLL_WHEEL   2
+#define FP_ENC_1_LAYER_VOLUME         0
+#define FP_ENC_1_LAYER_RGB_MODE       7
+#define FP_ENC_1_LAYER_RGB_HUE        8
+#define FP_ENC_1_LAYER_RGB_SAT        9
+#define FP_ENC_1_LAYER_RGB_VAL        10
+```
+
+| Setting                                      | Description                                                                                                                 | Default               |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `FP_ENC_0_LAYER_VOLUME`                      | Clockwise volume up, counter clockwise volume down                                                                          | `0`                   |
+| `FP_ENC_0_LAYER_PGUP_PGDN`                   | Clockwise page up, counter clockwise page down                                                                              | `1`                   |
+| `FP_ENC_0_LAYER_ZOOM`                        | Clockwise zoom in, counter clockwise zoom out                                                                               | `2`                   |
+| `FP_ENC_0_LAYER_DPI_POINTING`                | Clockwise DPI pointing value up, counter clockwise DPI pointing value down                                                  | `3`                   |
+| `FP_ENC_0_LAYER_SUPER_TAB`                   | Clockwise cmd/alt tab, counter clockwise shift cmd/alt tab (see `FP_MAC_PREFERRED` to determine if it uses cmd or alt)      | `4`                   |
+| `FP_ENC_0_LAYER_SUPER_CTRL_TAB`              | Clockwise ctrl tab, counter clockwise volume down                                                                           | `5`                   |
+| `FP_ENC_0_LAYER_SCROLL_WHEEL`                | Clockwise scroll wheel down, counter clockwise scroll wheel down                                                            | `6`                   |
+| `FP_ENC_0_LAYER_RGB_MODE`                    | Clockwise to step forward in RGB mode, counter clockwise to step backwards in RGB mode                                      | `7`                   |
+| `FP_ENC_0_LAYER_RGB_HUE`                     | Clockwise to increase RGB hue, counter clockwise to decrease RGB hue                                                        | `8`                   |
+| `FP_ENC_0_LAYER_RGB_SAT`                     | Clockwise to increase RGB saturation, counter clockwise to decrease RGB saturation                                          | `9`                   |
+| `FP_ENC_0_LAYER_RGB_VAL`                     | Clockwise to increase RGB value (typically brightness), counter clockwise to decrease RGB value                             | `10`                  |
+| `FP_ENC_1_LAYER_SUPER_TAB`                   | Same as `FP_ENC_0_LAYER_SUPER_TAB`, but for encoder 1                                                                       | `0`                   |
+| `FP_ENC_1_LAYER_PGUP_PGDN`                   | Same as `FP_ENC_0_LAYER_PGUP_PGDN`, but for encoder 1                                                                       | `1`                   |
+| `FP_ENC_1_LAYER_ZOOM`                        | Same as `FP_ENC_0_LAYER_ZOOM`, but for encoder 1                                                                            | `2`                   |
+| `FP_ENC_1_LAYER_DPI_POINTING`                | Same as `FP_ENC_0_LAYER_DPI_POINTING`, but for encoder 1                                                                    | `3`                   |
+| `FP_ENC_1_LAYER_SUPER_CTRL_TAB`              | Same as `FP_ENC_0_LAYER_SUPER_CTRL_TAB`, but for encoder 1                                                                  | `4`                   |
+| `FP_ENC_1_LAYER_SCROLL_WHEEL`                | Same as `FP_ENC_0_LAYER_SCROLL_WHEEL`, but for encoder 1                                                                    | `5`                   |
+| `FP_ENC_1_LAYER_VOLUME`                      | Same as `FP_ENC_0_LAYER_VOLUME`, but for encoder 1                                                                          | `6`                   |
+| `FP_ENC_1_LAYER_RGB_MODE`                    | Same as `FP_ENC_0_LAYER_RGB_MODE`, but for encoder 1                                                                        | `7`                   |
+| `FP_ENC_1_LAYER_RGB_HUE`                     | Same as `FP_ENC_0_LAYER_RGB_HUE`, but for encoder 1                                                                         | `8`                   |
+| `FP_ENC_1_LAYER_RGB_SAT`                     | Same as `FP_ENC_0_LAYER_RGB_SAT`, but for encoder 1                                                                         | `9`                   |
+| `FP_ENC_1_LAYER_RGB_VAL`                     | Same as `FP_ENC_0_LAYER_RGB_VAL`, but for encoder 1                                                                         | `10`                  |
+
 ## Pointing Device
 
 ### General Settings
@@ -101,11 +171,14 @@ enum userspace_custom_keycodes {
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `FP_POINTING_EXTENDED_MOUSE_REPORT_DISABLE`  | (Optional) Disable extended mouse report, enabled by default when pointing devices is enabled, saves a tiny bit of memory   | `undefined`                      |
 | `FP_POINTING_DEFAULT_DPI`                    | (Required) Sets the default DPI for your pointing device                                                                    | `10`                             |
+| `FP_POINTING_MAX_DPI`                        | (Required) Sets the maximum DPI for your pointing device                                                                    | `60`                             |
 | `FP_POINTING_SCROLLING_DPI`                  | (Required) Sets the default DPI for scrolling                                                                               | `1`                              |
+| `FP_POINTING_SCROLLING_MAX_DPI`              | (Required) Sets the maximum DPI for scrolling                                                                               | `10`                             |
 | `FP_POINTING_SCROLLING_LAYER_ENABLE`         | (Optional) Enables scrolling mode for the layer `FP_POINTING_SCROLLING_LAYER`                                               | `undefined`                      |
 | `FP_POINTING_SCROLLING_LAYER`                | (Required) Defines the layer used to enable scrolling                                                                       | `3`                              |
-| `FP_POINTING_SNIPING_DPI`                    | (Required) Sets the default DPI for scrolling                                                                               | `1`                              |
-| `FP_POINTING_SNIPING_LAYER_ENABLE`           | (Required) Enables scrolling mode for the layer `FP_POINTING_SNIPING_LAYER`                                                 | `undefined`                      |
+| `FP_POINTING_SNIPING_DPI`                    | (Required) Sets the default DPI for sniping                                                                                 | `1`                              |
+| `FP_POINTING_SNIPING_MAX_DPI`                | (Required) Sets the maximum DPI for sniping                                                                                 | `10`                             |
+| `FP_POINTING_SNIPING_LAYER_ENABLE`           | (Required) Enables sniping mode for the layer `FP_POINTING_SNIPING_LAYER`                                                   | `undefined`                      |
 | `FP_POINTING_SNIPING_LAYER`                  | (Required) Defines the layer used to enable sniping                                                                         | `2`                              |
 | `FP_POINTING_ZOOMING_LAYER_ENABLE`           | (Required) Enables zooming mode for the layer `FP_POINTING_ZOOMING_LAYER`                                                   | `undefined`                      |
 | `FP_POINTING_ZOOMING_LAYER`                  | (Required) Defines the layer used to enable zooming                                                                         | `1`                              |
@@ -245,11 +318,11 @@ When using a fingerpunch board, the get_haptic_enabled_key is completely overrid
 See https://github.com/qmk/qmk_firmware/blob/master/docs/feature_haptic_feedback.md#haptic-key-exclusion for details
 
 If you'd like to override this, you'll need to create a function as follows:
-`__attribute__((weak)) bool get_haptic_enabled_key_user(uint16_t keycode, keyrecord_t *record)`
+`bool get_haptic_enabled_key_user(uint16_t keycode, keyrecord_t *record)`
 
 In this function, define the key combinations you want to enable, similar to the following example:
 ```c
-__attribute__((weak)) bool get_haptic_enabled_key(uint16_t keycode, keyrecord_t *record) {
+bool get_haptic_enabled_key_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case KC_ENTER:
             return true;
