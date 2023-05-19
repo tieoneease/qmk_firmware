@@ -150,15 +150,7 @@ void keyboard_post_init_kb(void) {
     #endif
 
     #if defined(POINTING_DEVICE_ENABLE)
-    #if defined(POINTING_DEVICE_COMBINED)
-    // In theory, this should update the pointing dpi based on eeprom, but it doesn't seem to be working.
-    // It may be because of the fact that there are two eeproms on split keyboards, and the values are being stored independently on
-    // each half, but I'm not sure.
-    fp_set_cpi_combined_defaults();
-    #else
-    // This may be a bad decision, but use this function to apply the changes, since it covers sniping, scrolling, or regular cpi, based on what is active
-    fp_scroll_apply_dpi();
-    #endif
+    fp_apply_dpi();
     #endif
 
     #if defined(RGBLIGHT_ENABLE) || defined(RGB_MATRIX_ENABLE)
