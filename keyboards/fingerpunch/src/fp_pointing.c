@@ -32,6 +32,15 @@ static bool zooming_keycode_enabled = false;
 static bool zooming_layer_enabled = false;
 static bool zooming_hold = false;
 
+#ifdef POINTING_DEVICE_COMBINED
+void fp_compile_check_combined_default_modes(void) {
+    // assert that either both LEFT values are false or only one of them is true
+    static_assert( ((FP_POINTING_COMBINED_SCROLLING_LEFT || FP_POINTING_COMBINED_SNIPING_LEFT) && (FP_POINTING_COMBINED_SCROLLING_LEFT != FP_POINTING_COMBINED_SNIPING_LEFT)) || (!FP_POINTING_COMBINED_SCROLLING_LEFT && !FP_POINTING_COMBINED_SNIPING_LEFT), "Cannot specify both FP_POINTING_COMBINED_SCROLLING_LEFT and FP_POINTING_COMBINED_SNIPING_LEFT");
+    // assert that either both RIGHT values are false or only one of them is true
+    static_assert( ((FP_POINTING_COMBINED_SCROLLING_RIGHT || FP_POINTING_COMBINED_SNIPING_RIGHT) && (FP_POINTING_COMBINED_SCROLLING_RIGHT != FP_POINTING_COMBINED_SNIPING_RIGHT)) || (!FP_POINTING_COMBINED_SCROLLING_RIGHT && !FP_POINTING_COMBINED_SNIPING_RIGHT), "Cannot specify both FP_POINTING_COMBINED_SCROLLING_RIGHT and FP_POINTING_COMBINED_SNIPING_RIGHT");
+}
+#endif
+
 uint8_t fp_get_cpi_value_from_mode(uint8_t mode_index) {
     switch (mode_index) {
         case FP_POINTING_MODE:
@@ -164,13 +173,24 @@ void fp_snipe_dpi_update(uint8_t action) {
 
 void fp_apply_dpi_defaults(void) {
 #ifdef POINTING_DEVICE_COMBINED
+    uint8_t left_mode = FP_POINTING_MODE;
+    uint8_t right_mode = FP_POINTING_MODE;
+
     if (FP_POINTING_COMBINED_SCROLLING_LEFT) {
-        fp_set_cpi_combined_by_mode(FP_SCROLLING_MODE, FP_POINTING_MODE);
-    } else if (FP_POINTING_COMBINED_SCROLLING_RIGHT) {
-        fp_set_cpi_combined_by_mode(FP_POINTING_MODE, FP_SCROLLING_MODE);
-    } else {
-        fp_set_cpi_combined_by_mode(FP_POINTING_MODE, FP_POINTING_MODE);
+        left_mode = FP_SCROLLING_MODE;
     }
+    if (FP_POINTING_COMBINED_SNIPING_LEFT) {
+        left_mode = FP_SNIPING_MODE;
+    }
+
+    if (FP_POINTING_COMBINED_SCROLLING_RIGHT) {
+        right_mode = FP_SCROLLING_MODE;
+    }
+    if (FP_POINTING_COMBINED_SNIPING_RIGHT) {
+        right_mode = FP_SNIPING_MODE;
+    }
+    
+    fp_set_cpi_combined_by_mode(left_mode, right_mode);
 #else
     fp_set_cpi_by_mode(FP_POINTING_MODE);
 #endif
@@ -364,21 +384,21 @@ report_mouse_t pointing_device_task_combined_kb(report_mouse_t left_report, repo
 
 layer_state_t fp_layer_state_set_pointing(layer_state_t state) {
     switch (get_highest_layer(state)) {
-        case FP_POINTING_SCROLLING_LAYER:
 #ifdef FP_POINTING_SCROLLING_LAYER_ENABLE
+        case FP_POINTING_SCROLLING_LAYER:
             fp_scroll_layer_set(true);
-#endif
             break;
-        case FP_POINTING_SNIPING_LAYER:
+#endif
 #ifdef FP_POINTING_SNIPING_LAYER_ENABLE
+        case FP_POINTING_SNIPING_LAYER:
             fp_snipe_layer_set(true);
-#endif
             break;
-        case FP_POINTING_ZOOMING_LAYER:
+#endif
 #ifdef FP_POINTING_ZOOMING_LAYER_ENABLE
+        case FP_POINTING_ZOOMING_LAYER:
             fp_zoom_layer_set(true);
-#endif
             break;
+#endif
         default:
 #ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
             // If we hit one of the FP_POINTING_X_LAYERS, and then trigger auto mouse layer, we don't want to
@@ -389,21 +409,21 @@ layer_state_t fp_layer_state_set_pointing(layer_state_t state) {
                 break;
             }
 #endif
-            if (fp_scroll_layer_get()) {
 #ifdef FP_POINTING_SCROLLING_LAYER_ENABLE
+            if (fp_scroll_layer_get()) {
                 fp_scroll_layer_set(false);
-#endif
             }
-            if (fp_snipe_layer_get()) {
+#endif
 #ifdef FP_POINTING_SNIPING_LAYER_ENABLE
+            if (fp_snipe_layer_get()) {
                 fp_snipe_layer_set(false);
-#endif
             }
-            if (fp_zoom_layer_get()) {
+#endif
 #ifdef FP_POINTING_ZOOMING_LAYER_ENABLE
+            if (fp_zoom_layer_get()) {
                 fp_zoom_layer_set(false);
-#endif
             }
+#endif
             break;
     }
     return state;
